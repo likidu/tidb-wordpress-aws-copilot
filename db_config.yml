@@ -1,5 +1,5 @@
 db_host:
-  test: gateway01.us-west-2.prod.aws.tidbcloud.com
+  test: gateway.us-west-2.prod.aws.tidbcloud.com
 db_port:
   test: 4000
 db_name: 

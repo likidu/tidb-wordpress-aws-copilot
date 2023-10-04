@@ -1,0 +1,71 @@
+# The manifest for the "fe" service.
+# Read the full specification for the "Load Balanced Web Service" type at:
+#  https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/
+
+# Your service name will be used in naming your resources like log groups, ECS services, etc.
+name: fe
+type: Load Balanced Web Service
+
+# Distribute traffic to your service.
+http:
+  # Requests to this path will be forwarded to your service.
+  # To match all requests you can use the "/" path.
+  path: '/'
+  # You can specify a custom health check path. The default is "/".
+  healthcheck:
+    path: /
+    success_codes: '200-399'
+    interval: 60s
+    timeout: 5s
+    healthy_threshold: 3
+    unhealthy_threshold: 5
+  stickiness: true
+
+# Configuration for your containers and service.
+image:
+  # Docker build arguments. For additional overrides: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#image-build
+  build: Dockerfile
+  # Port exposed through your container to route traffic to it.
+  port: 8080
+
+cpu: 256       # Number of CPU units for the task.
+memory: 512    # Amount of memory in MiB used by the task.
+count: 1       # Number of tasks that should be running in your service.
+exec: true     # Enable running commands in your container.
+network:
+  connect: true # Enable Service Connect for intra-environment traffic between services.
+
+storage:
+  volumes:
+    wp-content:
+      path: /bitnami/wordpress
+      read_only: false
+      efs: true
+
+# storage:
+  # readonly_fs: true       # Limit to read-only access to mounted root filesystems.
+ 
+# Optional fields for more advanced use-cases.
+#
+variables:                    # Pass environment variables as key value pairs.
+  # Must for database connection if you are using TiDB public endpoint
+  WORDPRESS_ENABLE_DATABASE_SSL: yes
+  WORDPRESS_DATABASE_SSL_CA_FILE: '/etc/ssl/certs/ca-certificates.crt'
+  # Optional for customizations
+  BITNAMI_DEBUG: true
+  WORDPRESS_SKIP_BOOTSTRAP: yes
+  WORDPRESS_BLOG_NAME: Yet Another Fancy Blog
+
+secrets:                      # Pass secrets from AWS Systems Manager (SSM) Parameter Store.
+  WORDPRESS_DATABASE_USER: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/db_user
+  WORDPRESS_DATABASE_PASSWORD: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/db_password
+  WORDPRESS_DATABASE_HOST: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/db_host
+  WORDPRESS_DATABASE_PORT_NUMBER: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/db_port
+  WORDPRESS_DATABASE_NAME: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/db_name
+
+# You can override any of the values defined above by environment.
+#environments:
+#  test:
+#    count: 2               # Number of tasks to run for the "test" environment.
+#    deployment:            # The deployment strategy for the "test" environment.
+#       rolling: 'recreate' # Stops existing tasks before new ones are started for faster deployments.
